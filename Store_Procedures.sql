@@ -153,6 +153,11 @@ BEGIN
         FROM EstadoPrestamo
         WHERE descripcion = @nuevoEstado
 
+        
+        -- Agrego el registro al historial de cambios de estado de prestamo.
+        INSERT INTO HistorialEstadoPrestamo (idPrestamo, idEstadoPrestamo, fechaCambio, idUsuario, observaciones)
+            VALUES (@idPrestamo, @idNuevoEstado, GETDATE(), @idUsuarioOperador, @observaciones)
+        
         -- Actualizo el prestamo.
         UPDATE Prestamo
         SET
@@ -169,11 +174,6 @@ BEGIN
         BEGIN
             RAISERROR('NO SE PUDO ACTUALIZAR EL PRESTAMO', 16, 1)
         END
-
-        -- Agrego el registro al historial de cambios de estado de prestamo.
-        INSERT INTO HistorialEstadoPrestamo (idPrestamo, idEstadoPrestamo, fechaCambio, idUsuario, observaciones)
-            VALUES (@idPrestamo, @idNuevoEstado, GETDATE(), @idUsuarioOperador, @observaciones)
-
 
         COMMIT TRANSACTION
         PRINT 'Estado del prestamo actualizado con exito.'
