@@ -77,6 +77,7 @@ BEGIN
             VALUES (@idPrestamo, @idEstadoEnCurso, GETDATE(), NULL, NULL)
     END
 END;
+GO
 
 
 
