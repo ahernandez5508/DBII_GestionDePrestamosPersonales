@@ -2,8 +2,9 @@ USE DBII_GestionDePrestamosPersonales
 GO
 
 
--- SP 1: sp_SolicitarPrestamo
--- Permite a un cliente solicitar un prestamo sobre un producto. Valida que el monto y la cantidad de cuotas esten dentro de los rangos permitidos por el producto,
+-- SP 1:
+-- Usado por un cliente para solicitar un prestamo sobre un producto.
+-- Valida que el monto y la cantidad de cuotas esten dentro de los rangos permitidos por el producto,
 -- calcula la tasa de interes correspondiente al tramo de cuotas seleccionado, el interes total y deja el prestamo generado en estado Solicitado.
 CREATE PROCEDURE sp_SolicitarPrestamo (
     @idCliente INT,
@@ -15,6 +16,17 @@ AS
 BEGIN
     BEGIN TRY
         BEGIN TRANSACTION
+
+        -- Valido que el cliente no tenga un prestamo activo
+        IF EXISTS (
+            SELECT 1 FROM Prestamo p
+            INNER JOIN EstadoPrestamo ep ON p.idEstadoPrestamo = ep.idEstadoPrestamo
+            WHERE p.idCliente = @idCliente
+                AND ep.descripcion IN ('Solicitado', 'Aprobado', 'En Curso')
+        )
+        BEGIN
+            RAISERROR('EL CLIENTE YA TIENE UN PRESTAMO ACTIVO', 16, 1)
+        END
 
         -- Valido que el producto exista y obtengo sus rangos
         DECLARE @montoMinimo DECIMAL(12,2)
@@ -93,8 +105,8 @@ END;
 GO
 
 
--- SP 2: sp_CambiarEstadoPrestamo
--- Permite a un operador aprobar o rechazar un prestamo que se encuentra en estado Solicitado. Registra el usuario responsable y una observacion obligatoria del cambio.
+-- SP 2:
+-- Lo usa un operador aprobar o rechazar un prestamo que se encuentra en estado Solicitado.
 CREATE PROCEDURE sp_CambiarEstadoPrestamo (
     @idPrestamo INT,
     @idUsuarioOperador INT,
@@ -158,6 +170,11 @@ BEGIN
             RAISERROR('NO SE PUDO ACTUALIZAR EL PRESTAMO', 16, 1)
         END
 
+        -- Agrego el registro al historial de cambios de estado de prestamo.
+        INSERT INTO HistorialEstadoPrestamo (idPrestamo, idEstadoPrestamo, fechaCambio, idUsuario, observaciones)
+            VALUES (@idPrestamo, @idNuevoEstado, GETDATE(), @idUsuarioOperador, @observaciones)
+
+
         COMMIT TRANSACTION
         PRINT 'Estado del prestamo actualizado con exito.'
     END TRY
@@ -169,9 +186,9 @@ END;
 GO
 
 
--- SP 3: sp_RegistrarPagoCuota
--- Permite a un operador registrar el pago de una cuota pendiente, indicando el metodo de pago utilizado. La actualizacion de cuotasRestantes del prestamo y el cambio
--- a Finalizado quedan a cargo del trigger correspondiente sobre la tabla Cuota.
+-- SP 3:
+-- Lo puede usar un operador para registrar el pago de una cuota (pendiente o vencida), indicando el metodo de pago utilizado.
+-- Luego del UPDATE de la cuota se dispara el trigger "trg_ActualizarCuotasRestantes", que actualiza las cuotas en el prestamo.
 CREATE PROCEDURE sp_RegistrarPagoCuota (
     @idCuota INT,
     @idMetodoPago INT
