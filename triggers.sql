@@ -94,6 +94,7 @@ BEGIN
 
     -- Ejecuto solo si el prestamo esta pasando a En Curso
     IF (SELECT idEstadoPrestamo FROM inserted) = @idEstadoEnCurso
+        AND (SELECT idEstadoPrestamo FROM deleted) <> @idEstadoEnCurso
     BEGIN
         DECLARE @idPrestamo INT
         DECLARE @cantidadCuotas SMALLINT
