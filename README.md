@@ -11,7 +11,7 @@ Sistema de gestión de préstamos personales desarrollado sobre **SQL Server**. 
 
 ---
 
-## Ejecución rápida
+## Ejecución
 
 Para tener la base de datos creada y lista con datos de ejemplo, ejecutar el siguiente script:
 
@@ -23,8 +23,7 @@ Este script incluye la creación de la base de datos, todas las tablas, vistas, 
 
 ---
 
-## Scripts individuales
-
+## Scripts
 Si se prefiere ejecutar por partes, el orden correcto es:
 
 | # | Archivo | Descripción |
